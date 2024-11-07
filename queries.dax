@@ -1,0 +1,49 @@
+EVALUATE
+VAR FILTERED_USERS = 
+    FILTER(
+        'order_lines',
+        RELATED('orders'[order_date]) >= DATE(2017, 8, 1) &&
+        RELATED('orders'[order_date]) <= DATE(2017, 8, 15) &&
+        RELATED('products'[product]) <> "Корм Kitekat для кошек, с кроликом в соусе, 85 г" &&
+        RELATED('products'[category]) = "Продукция для животных"
+    )
+
+VAR DISTINCT_USERS = DISTINCT(SELECTCOLUMNS(FILTERED_USERS, "User ID", RELATED('orders'[user_id])))
+
+RETURN
+SELECTCOLUMNS(
+    DISTINCT_USERS,
+    "User ID", [User ID]
+)
+
+
+EVALUATE
+VAR FILTERED_ORDERS = 
+    FILTER(
+        'Order_Lines',
+        RELATED('orders'[order_date]) >= DATE(2017, 8, 15) &&
+        RELATED('orders'[order_date]) <= DATE(2017, 8, 30) &&
+        RELATED('warehouses'[city]) = "Санкт-Петербург"
+    )
+
+VAR PRODUCT_COUNTS = 
+    SUMMARIZE(
+        FILTERED_ORDERS,
+        'products'[product],
+        "ProductCount", COUNTROWS(FILTERED_ORDERS)
+    )
+
+VAR TOP_5_PRODUCTS = 
+    TOPN(
+        5,
+        PRODUCT_COUNTS,
+        [ProductCount],
+        DESC
+    )
+
+RETURN
+SELECTCOLUMNS(
+    TOP_5_PRODUCTS,
+    "Product Name", 'products'[product],
+    "Product Count", [ProductCount]
+)
